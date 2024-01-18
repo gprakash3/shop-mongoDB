@@ -1,6 +1,4 @@
 const mongodb=require('mongodb');
-const { NULL } = require('mysql2/lib/constants/types');
-// const {ObjectId} = require('mongodb');
 const getDb= require('../util/database').getDb;
 
 class Product{
