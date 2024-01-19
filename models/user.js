@@ -47,7 +47,7 @@ class User{
     //if product not found in cart then add product to cart and add quantity as 1.
     else{
       updatedCartItems.push({
-        productId: new ObjectId(product._id),
+        productId: new mongodb.ObjectId(product._id),
         quantity: newQuantity
       });
     }
@@ -57,6 +57,40 @@ class User{
     };
         const db= getDb();
     return db.collection('users').updateOne({_id: new mongodb.ObjectId(this._id)}, {$set:{cart: updatedCart}})
+  }
+
+  //get all product available in cart
+  getCart(){
+    const db=getDb();
+    //since this.cart.item will contain product id and quantity and we only want product id as array to pass it in find(), we use map here.
+    const productIds = this.cart.items.map(i => {
+      return i.productId;
+    });
+    //it will return product contain in array productIds (which is products embedded in user collection)
+    return db.collection('products').find({_id:{$in: productIds}}).toArray()
+    .then(products => {
+      //to get quantity of returned products in user collection
+      return products.map(prod => {
+        //returning all property of product along with quantity
+        //we use arrow function so that this will have access to cart items.
+        //again, cartitem will contain product and quantity,  we only add quantity.
+        return {...prod, quantity: this.cart.items.find(cartitem => {
+            //here cartitem.productId and prod._id is of type mongodb ObjectId hence we convert it to string for comparision
+          return cartitem.productId.toString() == prod._id.toString();
+        }).quantity}
+      })
+    })
+  }
+
+
+  //delete cart items
+  deleteById(prodId){
+    const updatedcart = this.cart.items.filter(item => {
+      return item.productId.toString()!=prodId.toString();
+    });
+    const db= getDb();
+    return db.collection('users').updateOne({_id: new mongodb.ObjectId(this._id)}, {$set:{cart: {items:updatedcart}}});
+
   }
 
   static findById(userId){
